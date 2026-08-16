@@ -1,0 +1,130 @@
+.submissions-page {
+  flex: 1;
+  padding: 48px 0 72px;
+}
+
+.submissions-page__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.submissions-page__header h1 {
+  font-size: clamp(26px, 4vw, 34px);
+}
+
+.submissions-page__subtitle {
+  color: var(--slate);
+  margin-top: 6px;
+  font-size: 15px;
+}
+
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--slate);
+  padding: 10px 16px;
+  border-radius: var(--radius-full);
+  font-size: 13.5px;
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-refresh:hover:not(:disabled) {
+  background: var(--surface-violet);
+  color: var(--violet-strong);
+  border-color: var(--border-strong);
+}
+
+.btn-refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+.submissions-page__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 11px 16px;
+  max-width: 340px;
+  margin: 24px 0 28px;
+  color: var(--slate-soft);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.submissions-page__search:focus-within {
+  border-color: var(--violet);
+  box-shadow: var(--shadow-focus);
+}
+
+.submissions-page__search input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--navy);
+  width: 100%;
+}
+
+.submissions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.state-panel {
+  text-align: center;
+  padding: 64px 24px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-blue);
+}
+
+.state-panel h3 {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.state-panel p {
+  color: var(--slate);
+  font-size: 14px;
+}
+
+.state-panel--error {
+  background: var(--danger-bg);
+  border-color: rgba(214, 86, 74, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.state-panel--error h3 {
+  color: var(--danger);
+}
+
+@media (max-width: 640px) {
+  .submissions-page {
+    padding: 32px 0 56px;
+  }
+  .submissions-page__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .submissions-page__search {
+    max-width: 100%;
+  }
+}
