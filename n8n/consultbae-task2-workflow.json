@@ -1,1 +1,494 @@
 
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "consultbae-new-csv",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        16,
+        880
+      ],
+      "id": "03138846-4771-40c6-8649-81e3e09787d2",
+      "name": "Webhook",
+      "webhookId": "c6edf49f-ea98-462c-9b24-006c6f1d8693"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "csv_file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "7c504e56-fb84-44c8-b217-8b486360d3ec",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "e4be84bf-8a31-415d-b71f-1f7b1f7b1e3c",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  CASE\n    WHEN NULLIF(TRIM('{{ $json.Email || \"\" }}'), '') IS NOT NULL\n      THEN 'email'\n    WHEN NULLIF(TRIM('{{ $json.Phone || \"\" }}'), '') IS NOT NULL\n      THEN 'phone'\n    ELSE 'name_city'\n  END AS match_type,\n\n  COUNT(*) AS existing_count\n\nFROM people\n\nWHERE\n  (\n    NULLIF(TRIM('{{ $json.Email || \"\" }}'), '') IS NOT NULL\n    AND LOWER(TRIM(email)) = LOWER(TRIM('{{ $json.Email || \"\" }}'))\n  )\n\n  OR\n\n  (\n    NULLIF(TRIM('{{ $json.Email || \"\" }}'), '') IS NULL\n    AND NULLIF(TRIM('{{ $json.Phone || \"\" }}'), '') IS NOT NULL\n    AND REPLACE(REPLACE(REPLACE(phone, ' ', ''), '+91', ''), '-', '')\n        =\n        REPLACE(REPLACE(REPLACE('{{ $json.Phone || \"\" }}', ' ', ''), '+91', ''), '-', '')\n  )\n\n  OR\n\n  (\n    NULLIF(TRIM('{{ $json.Email || \"\" }}'), '') IS NULL\n    AND NULLIF(TRIM('{{ $json.Phone || \"\" }}'), '') IS NULL\n    AND LOWER(TRIM(name)) = LOWER(TRIM('{{ $json.Full_Name || \"\" }}'))\n    AND LOWER(TRIM(city)) = LOWER(TRIM('{{ $json.City || \"\" }}'))\n  );",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        576,
+        176
+      ],
+      "id": "04bfed6e-8743-4f33-b0a6-c18537d19121",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "mySql": {
+          "id": "E6U0ueSYi3g1yA64",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "061e9c6f-8101-421b-bbda-dcfe77fa753e",
+              "leftValue": "={{ $json.existing_count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        832,
+        192
+      ],
+      "id": "5bde9d3e-a521-4bfc-83d3-627498a98bac",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "value": "people",
+          "mode": "list",
+          "cachedResultName": "people"
+        },
+        "dataMode": "defineBelow",
+        "valuesToSend": {
+          "values": [
+            {
+              "column": "name",
+              "value": "={{ $('Edit Fields').item.json.name }}"
+            },
+            {
+              "column": "email",
+              "value": "={{ $('Edit Fields').item.json.email }}"
+            },
+            {
+              "column": "phone",
+              "value": "={{ $('Edit Fields').item.json.phone }}"
+            },
+            {
+              "column": "city",
+              "value": "={{ $('Edit Fields').item.json.city }}"
+            },
+            {
+              "column": "current_ctc",
+              "value": "={{ $('Edit Fields').item.json.current_ctc }}"
+            },
+            {
+              "column": "applied_date",
+              "value": "={{ $('Edit Fields').item.json.applied_date }}"
+            },
+            {
+              "column": "experience_years",
+              "value": "={{ $('Edit Fields').item.json.experience_years }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        1248,
+        320
+      ],
+      "id": "b1f4511b-0e48-47cd-bcf9-66eb4aa4e681",
+      "name": "Insert rows in a table",
+      "credentials": {
+        "mySql": {
+          "id": "E6U0ueSYi3g1yA64",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "893ae7b7-af14-4d45-82c6-3f6e59c6b1ed",
+              "name": "name",
+              "value": "={{ $('Loop Over Items').item.json['Full Name'] }}",
+              "type": "string"
+            },
+            {
+              "id": "1643efcb-647e-4eec-844c-59643a204963",
+              "name": "email",
+              "value": "={{ $('Loop Over Items').item.json['Email'] }}",
+              "type": "string"
+            },
+            {
+              "id": "28155a98-4fa0-43a0-bc84-cfc44a6ff979",
+              "name": "phone",
+              "value": "={{ $('Loop Over Items').item.json['Phone'] }}",
+              "type": "string"
+            },
+            {
+              "id": "0a8ce0fd-7ed5-436a-a8f5-384e889cfbe0",
+              "name": "city",
+              "value": "={{ $('Loop Over Items').item.json['City'] }}",
+              "type": "string"
+            },
+            {
+              "id": "ba9ea59d-fb78-411d-9927-df2f309c72d3",
+              "name": "current_ctc",
+              "value": "={{ $('Loop Over Items').item.json['Current CTC'] }}",
+              "type": "string"
+            },
+            {
+              "id": "a04331b4-caff-4670-9043-a848d8393061",
+              "name": "applied_date",
+              "value": "={{ $('Loop Over Items').item.json['Applied Date'] }}",
+              "type": "string"
+            },
+            {
+              "id": "56124644-4c2b-4875-bf65-6547f74e9c7d",
+              "name": "skiils",
+              "value": "={{ $('Loop Over Items').item.json['Skills'] }}",
+              "type": "string"
+            },
+            {
+              "id": "d40f6f3e-d8f4-46f6-a001-292407ada07f",
+              "name": "rate",
+              "value": "={{ $('Loop Over Items').item.json['Rate'] }}",
+              "type": "string"
+            },
+            {
+              "id": "2bdfa3c2-5770-496c-9644-2624a62aeab3",
+              "name": "rate_unit",
+              "value": "={{ $('Loop Over Items').item.json['Rate Unit'] }}",
+              "type": "string"
+            },
+            {
+              "id": "d146045a-e2b7-408f-95c0-98c9c09213f2",
+              "name": "hourly_rate",
+              "value": "={{ $('Loop Over Items').item.json['Hourly Rate'] }}",
+              "type": "string"
+            },
+            {
+              "id": "3caf13ba-e37c-45a7-93fb-37b21aae8564",
+              "name": "status",
+              "value": "={{ $('Loop Over Items').item.json['Status'] }}",
+              "type": "string"
+            },
+            {
+              "id": "955e622f-5c6d-46ad-83aa-a560ba78bb2c",
+              "name": "verified",
+              "value": "={{ $('Loop Over Items').item.json['Verified'] }}",
+              "type": "string"
+            },
+            {
+              "id": "6d9de196-18bf-4625-9226-169ec12fb277",
+              "name": "projects_completed",
+              "value": "={{ $('Loop Over Items').item.json['Projects Completed'] }}",
+              "type": "string"
+            },
+            {
+              "id": "27a34105-954c-4900-80ed-f20f7964db63",
+              "name": "experience_years",
+              "value": "={{ $('Loop Over Items').item.json['Experience (Years)'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        320
+      ],
+      "id": "e2f07175-ca7c-4ead-8832-e84b580b3e9d",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c34e3e13-7a5c-48af-811a-afebfec36e26",
+              "name": "record_status",
+              "value": "Already Exists",
+              "type": "string"
+            },
+            {
+              "id": "576408df-79e8-449f-a4eb-0c606351891c",
+              "name": "match_type",
+              "value": "={{ $json.match_type }}",
+              "type": "string"
+            },
+            {
+              "id": "0ff4e5c3-be67-4b22-a493-74d678366843",
+              "name": "existing_count",
+              "value": "={{ $json.existing_count }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        112
+      ],
+      "id": "1f85f9b7-9c25-4954-b6f3-8ca0f17c7dff",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": {
+          "__rl": true,
+          "value": "people",
+          "mode": "list",
+          "cachedResultName": "people"
+        },
+        "dataMode": "defineBelow",
+        "columnToMatchOn": "email",
+        "valueToMatchOn": "={{ $('Loop Over Items').item.json['Email'] }}",
+        "valuesToSend": {
+          "values": [
+            {
+              "column": "name",
+              "value": "={{ $('Loop Over Items').item.json['Full Name'] }}"
+            },
+            {
+              "column": "phone",
+              "value": "={{ $('Loop Over Items').item.json['Phone'] }}"
+            },
+            {
+              "column": "city",
+              "value": "={{ $('Loop Over Items').item.json['City'] }}"
+            },
+            {
+              "column": "current_ctc",
+              "value": "={{ $('Loop Over Items').item.json['Current CTC'] }}"
+            },
+            {
+              "column": "applied_date",
+              "value": "={{ $('Loop Over Items').item.json['Applied Date'] }}"
+            },
+            {
+              "column": "experience_years",
+              "value": "={{ $('Loop Over Items').item.json['Experience (Years)'] }}"
+            },
+            {
+              "column": "skills",
+              "value": "={{ $('Loop Over Items').item.json['Skills'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        1232,
+        112
+      ],
+      "id": "a0910aa1-cf67-4235-ba1e-6e53f8ce1674",
+      "name": "Update rows in a table",
+      "credentials": {
+        "mySql": {
+          "id": "E6U0ueSYi3g1yA64",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Upload Candidate CSV",
+        "formDescription": "Upload your CSV file",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "CSV File",
+              "fieldType": "file",
+              "fieldName": "csv_file"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -32,
+        -48
+      ],
+      "id": "d87fd98f-cb60-4d16-b345-167ee6879b2b",
+      "name": "On form submission",
+      "webhookId": "13def859-b99d-407a-a37c-abf1333dd89b"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        []
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Insert rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Update rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b56e87d0-d4df-4b87-9b34-122add2aa0cd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "be954fbd580707af94035128f0aacee3c887c22d6dc176c3ed9d34c574152ab0"
+  },
+  "id": "zG1oWS7YNBfllObG",
+  "tags": []
+}
